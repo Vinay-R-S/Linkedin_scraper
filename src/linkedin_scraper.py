@@ -45,31 +45,6 @@ def signin(web_driver):
         print("Login failed:", e)
 
 
-def get_profile_page_source(web_driver, profile_url) -> str:
-    """Returns the HTML source of a LinkedIn profile."""
-    
-    web_driver.get(profile_url)
-    time.sleep(5)  # Wait for profile to load
-    return web_driver.page_source
-
-
-def soup_html_parsing(page_source):
-    """Parse and save profile data."""
-    try:
-        soup = BeautifulSoup(page_source, "lxml")  # Fast parser
-    except Exception:
-        soup = BeautifulSoup(page_source, "html.parser")  # Fallback parser
-
-    profile_data = soup.find("main", {"class": "KvRJXMpQfKwEcgEcBArUUlCAbTXLQvCpWmSxM"})
-
-    if profile_data:
-        with open("output.txt", "w", encoding="utf-8") as file:
-            file.write(str(profile_data))
-        print("File saved successfully")
-    else:
-        print("⚠️ Profile data not found. Possibly wrong class name or not logged in.")
-
-
 def clean_text(text):
     
     text = re.sub(r'\n+', '\n', text)
@@ -94,58 +69,105 @@ def remove_duplicates(text):
     return '\n'.join(new_lines)
 
 
-def data_preprocessing():
+def scroll_logic(web_driver):
+     # Scroll logic added to load more posts
+    last_height = web_driver.execute_script("return document.body.scrollHeight")
+    for _ in range(15):
+        web_driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)
+        new_height = web_driver.execute_script("return document.body.scrollHeight")
+        if new_height == last_height:
+            break
+        last_height = new_height
+
+    
+def scrape_profile_page(web_driver, profile_url):
+    
+    web_driver.get(profile_url)
+    time.sleep(5)
+    
+    scroll_logic(web_driver)
+    time.sleep(5)
+    
+    profile_page_source = web_driver.page_source
+    
+    try:
+        soup = BeautifulSoup(profile_page_source, "lxml")  # Fast parser
+    except Exception:
+        soup = BeautifulSoup(profile_page_source, "html.parser")  # Fallback parser
         
-    # Read the file content
-    with open("profile_data.txt", "r", encoding="utf-8") as file:
-        html_content = file.read()
-
-    # Create soup object from the HTML string
-    profile_data = BeautifulSoup(html_content, "lxml")  # Or use 'html.parser' if lxml not installed
-
-    # profile_data_text = profile_data.get_text()
+    profile_main = soup.find('main', {'class': 'KvRJXMpQfKwEcgEcBArUUlCAbTXLQvCpWmSxM'})
     
-    # if profile_data_text:
-    #     with open("profile_data_text.txt", "w", encoding="utf-8") as file:
-    #         file.write(str(profile_data_text))
-    #     print("File saved successfully")
-    # else:
-    #     print("⚠️ Profile data not found. Possibly wrong class name or not logged in.")
+    profile_sections = profile_main.find_all('section', {'class': 'artdeco-card' })
     
-    sections = profile_data.find_all('section', {'class': 'artdeco-card' })
+    profile_text = [profile_sec.get_text() for profile_sec in profile_sections]
     
-    print(len(sections))
+    profile_text = [clean_text(pf_text) for pf_text in profile_text]
     
-    sections_text = [section.get_text() for section in sections]
+    profile_text = [remove_duplicates(pf_text)  for pf_text in profile_text]
     
-    sections_text = [clean_text(section) for section in sections_text]
+    json_data = [{"id": i, "profile_text_data": text} for i, text in enumerate(profile_text)]
     
-    sections_text = [remove_duplicates(section) for section in sections_text]
-    
-    # Convert to list of dicts
-    json_data = [{"id": i, "section_text_data": text} for i, text in enumerate(sections_text)]
-
     # Save to JSON file
-    with open("section_text_data.json", "w", encoding="utf-8") as f:
+    with open("./data/ismail/profile_text_data.json", "w", encoding="utf-8") as f:
         json.dump(json_data, f, indent=4, ensure_ascii=False)
 
-    print("✅ Saved to output.json")
+    print("✅ Saved to profile_text_data.json")
     
+
+def scrape_recent_activity(web_driver, profile_url):
     
+    recent_activity_url = "recent-activity/all/"
+    activity_url = profile_url + recent_activity_url
+
+    web_driver.get(activity_url)
+    time.sleep(5)
+    
+    scroll_logic(web_driver)
+    time.sleep(5)
+
+    activity_page_source = web_driver.page_source
+
+    try:
+        soup = BeautifulSoup(activity_page_source, "lxml")  # Fast parser
+    except Exception:
+        soup = BeautifulSoup(activity_page_source, "html.parser")  # Fallback parser
+
+    activity_main = soup.find("main", {"class": "KvRJXMpQfKwEcgEcBArUUlCAbTXLQvCpWmSxM"})
+    
+    activity_divs = activity_main.find_all('div', {'class': 'update-components-text relative update-components-update-v2__commentary'})
+    
+    activity_text = [act_text.get_text() for act_text in activity_divs]
+    
+    activity_text = [clean_text(act_text) for act_text in activity_text]
+    
+    activity_text = [remove_duplicates(act_text) for act_text in activity_text]
+
+    activity_text = activity_text[:20]  # Limit to top 20 posts
+
+    json_data = [{"id": i, "activities_text_data": text} for i, text in enumerate(activity_text)]
+    
+    # Save to JSON file
+    with open("./data/ismail/activities_text_data.json", "w", encoding="utf-8") as f:
+        json.dump(json_data, f, indent=4, ensure_ascii=False)
+
+    print("✅ Saved to activities_text_data.json")
+
 
 if __name__ == "__main__":
+    
     aditya_linkedin = "https://www.linkedin.com/in/proaditya/"
-
-    # # Step 1: Sign in
-    # signin(driver)
-
-    # # Step 2: Get profile page source
-    # page_source = get_profile_page_source(driver, aditya_linkedin)
-
-    # # Step 3: Getting the text from the user profile main html tag
-    # soup_html_parsing(page_source)
-
-    data_preprocessing()
     
-    # print("✅ Successful execution")
+    ismail_linkedin = "https://www.linkedin.com/in/mohammedismail1454/"
+
+    # Step 1: Sign in
+    signin(driver)
     
+    # Step 2: Scrape profile page -> home page
+    scrape_profile_page(driver, ismail_linkedin)
+    
+    # Step 5: Scrape activites page -> recent-activity page
+    scrape_recent_activity(driver, ismail_linkedin)
+        
+    print("✅ Successful execution")
+
