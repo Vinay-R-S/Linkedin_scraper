@@ -1,5 +1,13 @@
 .venv
 .env
 data
+
 prompt.txt
+dummy.txt
+api_tokens.txt
+output.json
+refined_profile.json
+globalsales.co.in
+
 /cookies/*
+refined_data
