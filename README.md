@@ -36,16 +36,6 @@ Install all dependencies with:
 pip install -r requirements.txt
 ```
 
-**`requirements.txt` should contain:**
-
-```txt
-beautifulsoup4
-lxml
-undetected-chromedriver
-selenium
-python-dotenv
-```
-
 ---
 
 ## 🔐 Setup
@@ -123,9 +113,3 @@ This project is for **educational purposes** only. Scraping LinkedIn **violates 
 * Works best with real accounts (dummy accounts may get flagged)
 
 ---
-
-## 💻 Author
-
-Built by **Vinay Saunshi**
-For sales intelligence, lead gen, and LLM data pipelines.
-* Contact: vinayrsaunshi@gmail.com
