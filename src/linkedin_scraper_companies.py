@@ -1,9 +1,4 @@
-import os
-import time
-import warnings
-import re
-import json
-import pickle
+import os, time, warnings, re, json, pickle
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import undetected_chromedriver as uc
