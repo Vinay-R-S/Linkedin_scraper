@@ -1,0 +1,226 @@
+{
+  "name": "1CompanyProfiling",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5edf1e40-1083-42e0-b7e9-6d103b48aded",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "fileSelector": "E:/SalesBuddy/Linkedin_scraper/data/companies/infosys/about.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "95d342c4-0e3f-428a-88d7-377daa791197",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an intelligent assistant.\n\nRead the following JSON object extracted from a LinkedIn company profile, and generate a very concise summary for company profiling.\n\nIt should only include:\n- company_name\n- industry\n- company_size\n- specialties (list of core focus areas)\n- key_markets (few major countries or regions where they operate)\n- linkedin_summary (one sentence summary of their typical activity or positioning)\n\nReturn the output in this JSON format only:\n{\n  \"company_name\": \"\",\n  \"industry\": \"\",\n  \"company_size\": \"\",\n  \"specialties\": [],\n  \"key_markets\": [],\n  \"linkedin_summary\": \"\"\n}\n\nHere’s the data:\n{{ JSON.stringify($json) }}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "8b2ecee2-eca8-4b6a-9ac1-b32b2c5a3005",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        672,
+        272
+      ],
+      "id": "e4eabdeb-7adb-4a56-8747-ed5f737cfecf",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "N3TWXg9O23KFuOfB",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "2513c3f1-5712-4bbb-a96d-1584363beec8",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "collection": "leads",
+        "fields": "=output, {{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.2,
+      "position": [
+        1072,
+        0
+      ],
+      "id": "c3051fce-41ec-41fd-a97c-a8b27ec1f088",
+      "name": "MongoDB",
+      "credentials": {
+        "mongoDb": {
+          "id": "pI8hcwirXGt7h4FR",
+          "name": "MongoDB account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"company_name\": { \"type\": \"string\" },\n    \"industry\": { \"type\": \"string\" },\n    \"company_size\": { \"type\": \"string\" },\n    \"specialties\": {\n      \"type\": \"array\",\n      \"items\": { \"type\": \"string\" }\n    },\n    \"key_markets\": {\n      \"type\": \"array\",\n      \"items\": { \"type\": \"string\" }\n    },\n    \"linkedin_summary\": { \"type\": \"string\" },\n    \"website_link\": { \"type\": \"string\" }\n  },\n  \"required\": [\n    \"company_name\",\n    \"industry\",\n    \"company_size\",\n    \"specialties\",\n    \"key_markets\",\n    \"linkedin_summary\",\n    \"website_link\"\n  ]\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        832,
+        224
+      ],
+      "id": "5190b50d-bd02-4ee4-8e68-8d6991b34c41",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite-preview-06-17",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        912,
+        448
+      ],
+      "id": "da51e003-15d3-4eb1-9c20-e9e8d6c95c0a",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "N3TWXg9O23KFuOfB",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "MongoDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7db80a24-1fa6-4da4-8caf-d10ac8d7ad0a",
+  "meta": {
+    "instanceId": "baf311faa145256f9a0c8d9000ecd96dc41f95419e7eed6539446e3b393659ec"
+  },
+  "id": "Sh6EYLhZekq0EkVk",
+  "tags": []
+}
