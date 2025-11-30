@@ -48,7 +48,7 @@ def scroll_logic(web_driver, max_posts=20, activity=False):
             posts = soup.find_all("div", {"class": "update-components-text relative update-components-update-v2__commentary"})
             seen_posts.update(posts)
             if len(seen_posts) >= max_posts:
-                print(f"🛑 Loaded {len(seen_posts)} posts. Stopping scroll.")
+                print(f"Loaded {len(seen_posts)} posts. Stopping scroll.")
                 break
         new_height = web_driver.execute_script("return document.body.scrollHeight")
         if new_height == last_height:
@@ -58,7 +58,7 @@ def scroll_logic(web_driver, max_posts=20, activity=False):
 def save_cookies(driver, path):
     with open(path, "wb") as file:
         pickle.dump(driver.get_cookies(), file)
-    print("🍪 Cookies saved!")
+    print("Cookies saved!")
 
 def load_cookies(driver, path, url="https://www.linkedin.com/"):
     driver.get(url)
@@ -66,7 +66,7 @@ def load_cookies(driver, path, url="https://www.linkedin.com/"):
         cookies = pickle.load(file)
     for cookie in cookies:
         driver.add_cookie(cookie)
-    print("🍪 Cookies loaded!")
+    print("Cookies loaded!")
 
 def auto_login(driver, cookie_path):
     if os.path.exists(cookie_path):
@@ -75,21 +75,21 @@ def auto_login(driver, cookie_path):
             driver.get("https://www.linkedin.com/feed/")
             time.sleep(5)
             if "feed" in driver.current_url:
-                print("✅ Logged in using cookies")
+                print("Logged in using cookies")
                 return True
         except Exception as e:
-            print("⚠️ Failed cookie login:", e)
+            print("Failed cookie login:", e)
     # Fallback to manual login
-    print("🔓 Manual login required. Opening LinkedIn...")
+    print("Manual login required. Opening LinkedIn...")
     driver.get("https://www.linkedin.com/login")
     time.sleep(3)
-    input("👉 Please complete login manually, then press ENTER here...")
+    input("Please complete login manually, then press ENTER here...")
     if "feed" in driver.current_url:
-        print("✅ Logged in manually. Saving cookies...")
+        print("Logged in manually. Saving cookies...")
         save_cookies(driver, cookie_path)
         return True
     else:
-        print("❌ Login failed even after manual attempt.")
+        print("Login failed even after manual attempt.")
         return False
 
 def robust_generic_scraper(web_driver, url, main_div_class, content_div_class, output_key_name, output_filename, limit=20):
@@ -109,12 +109,12 @@ def robust_generic_scraper(web_driver, url, main_div_class, content_div_class, o
     content_divs = main_div.find_all("div", {"class": content_div_class}) if main_div else []
     # Fallback: try to get all <section> or <main> blocks if nothing found
     if not content_divs:
-        print(f"⚠️ No content divs found with class '{content_div_class}'. Trying fallback strategies...")
+        print(f"No content divs found with class '{content_div_class}'. Trying fallback strategies...")
         # Try all <section> tags
         content_divs = soup.find_all("section")
     # Fallback: if still nothing, get all visible text from <body>
     if not content_divs:
-        print(f"⚠️ No <section> tags found. Extracting all visible text from <body>.")
+        print(f"No <section> tags found. Extracting all visible text from <body>.")
         body = soup.find("body")
         if body:
             text = body.get_text(separator="\n", strip=True)
@@ -127,7 +127,7 @@ def robust_generic_scraper(web_driver, url, main_div_class, content_div_class, o
         # Remove empty strings
         text_data = [t for t in text_data if t.strip()]
         if not text_data:
-            print(f"⚠️ No non-empty text extracted from fallback blocks.")
+            print(f"No non-empty text extracted from fallback blocks.")
     # Limit results if needed
     if limit:
         text_data = text_data[:limit]
@@ -136,7 +136,7 @@ def robust_generic_scraper(web_driver, url, main_div_class, content_div_class, o
     output_filename = output_filename.replace('./src/data/companies/', './data/companies/').replace('./data/data/companies/', './data/companies/')
     with open(output_filename, "w", encoding="utf-8") as f:
         json.dump(json_data, f, indent=4, ensure_ascii=False)
-    print(f"✅ Saved to {output_filename}")
+    print(f"Saved to {output_filename}")
     return json_data
 
 def scraper_company_about_page(driver, company_profile_url, company_name):
@@ -172,7 +172,7 @@ def robust_company_post_page(driver, company_profile_url, company_name):
             post_texts.append(cleaned_text)
     # Fallback: if no posts found, try to get all <section> tags
     if not post_texts:
-        print("⚠️ No posts found with main class. Trying fallback...")
+        print("No posts found with main class. Trying fallback...")
         sections = soup.find_all("section")
         for sec in sections:
             text = remove_duplicates(clean_text(sec.get_text(separator=" ", strip=True)))
@@ -183,8 +183,8 @@ def robust_company_post_page(driver, company_profile_url, company_name):
     output_path = f"./data/companies/{company_name}/post.json"
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(json_data, f, indent=4, ensure_ascii=False)
-    print(f"✅ Extracted {len(post_texts)} posts")
-    print(f"✅ Saved to {output_path}")
+    print(f"Extracted {len(post_texts)} posts")
+    print(f"Saved to {output_path}")
     return json_data
 
 def combine_all_data(person_name, *all_data_lists):
@@ -218,25 +218,24 @@ if __name__ == "__main__":
     if auto_login(driver, cookie_path):
         try:
             while True:
-                print("\n🔍 What do you want to scrape?")
-                print("1️⃣  Company Profile (All: About, Posts, People, Products)")
+                print("\nWhat do you want to scrape?")
+                print("Company Profile (All: About, Posts, People, Products)")
                 choice = input("Enter your choice (1 or 'quit' to exit): ").strip()
                 if choice.lower() == "quit":
                     print("👋 Exiting...")
                     break
-                profile_url = input("\n🔗 Enter LinkedIn company profile URL: ").strip()
+                profile_url = input("\nEnter LinkedIn company profile URL: ").strip()
                 company_name = profile_url.rstrip('/').split("/")[-1]
                 if choice == "1":
                     scrape_full_company_profile(driver, profile_url, company_name)
                 else:
-                    print("❌ Invalid choice. Please enter 1.")
+                    print("Invalid choice. Please enter 1.")
         except KeyboardInterrupt:
-            print("\n🛑 Interrupted by user")
+            print("\nInterrupted by user")
         finally:
             if driver:
                 try:
-                    print("🚪 Closing browser properly...")
+                    print("Closing browser properly...")
                     driver.quit()
                 except Exception as e:
-                    print(f"⚠️ Error closing browser: {e}") 
-                    
+                    print(f"Error closing browser: {e}") 

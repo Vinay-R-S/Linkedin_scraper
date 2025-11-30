@@ -51,7 +51,7 @@ def scroll_logic(web_driver, max_posts=20, activity=False):
             posts = soup.find_all("div", {"class": "update-components-text relative update-components-update-v2__commentary"})
             seen_posts.update(posts)
             if len(seen_posts) >= max_posts:
-                print(f"🛑 Loaded {len(seen_posts)} posts. Stopping scroll.")
+                print(f"Loaded {len(seen_posts)} posts. Stopping scroll.")
                 break
         new_height = web_driver.execute_script("return document.body.scrollHeight")
         if new_height == last_height:
@@ -61,7 +61,7 @@ def scroll_logic(web_driver, max_posts=20, activity=False):
 def save_cookies(driver, path):
     with open(path, "wb") as file:
         pickle.dump(driver.get_cookies(), file)
-    print("🍪 Cookies saved!")
+    print("Cookies saved!")
 
 def load_cookies(driver, path, url="https://www.linkedin.com/"):
     driver.get(url)
@@ -69,7 +69,7 @@ def load_cookies(driver, path, url="https://www.linkedin.com/"):
         cookies = pickle.load(file)
     for cookie in cookies:
         driver.add_cookie(cookie)
-    print("🍪 Cookies loaded!")
+    print("Cookies loaded!")
 
 def auto_login(driver, cookie_path):
     if os.path.exists(cookie_path):
@@ -78,21 +78,21 @@ def auto_login(driver, cookie_path):
             driver.get("https://www.linkedin.com/feed/")
             time.sleep(5)
             if "feed" in driver.current_url:
-                print("✅ Logged in using cookies")
+                print("Logged in using cookies")
                 return True
         except Exception as e:
-            print("⚠️ Failed cookie login:", e)
+            print("Failed cookie login:", e)
     # Fallback to manual login
-    print("🔓 Manual login required. Opening LinkedIn...")
+    print("Manual login required. Opening LinkedIn...")
     driver.get("https://www.linkedin.com/login")
     time.sleep(3)
-    input("👉 Please complete login manually, then press ENTER here...")
+    input("Please complete login manually, then press ENTER here...")
     if "feed" in driver.current_url:
-        print("✅ Logged in manually. Saving cookies...")
+        print("Logged in manually. Saving cookies...")
         save_cookies(driver, cookie_path)
         return True
     else:
-        print("❌ Login failed even after manual attempt.")
+        print("Login failed even after manual attempt.")
         return False
 
 def generic_scraper(web_driver, url, main_div_class, content_div_class, output_key_name, output_filename, limit=20):
@@ -112,7 +112,7 @@ def generic_scraper(web_driver, url, main_div_class, content_div_class, output_k
     json_data = [{"id": i, output_key_name: text} for i, text in enumerate(text_data)]
     with open(output_filename, "w", encoding="utf-8") as f:
         json.dump(json_data, f, indent=4, ensure_ascii=False)
-    print(f"✅ Saved to {output_filename}")
+    print(f"Saved to {output_filename}")
     return json_data
 
 def scrape_profile_page(web_driver, profile_url, person_name):
@@ -127,7 +127,7 @@ def scrape_profile_page(web_driver, profile_url, person_name):
     json_data = [{"id": i, "profile_text_data": text} for i, text in enumerate(text_data)]
     with open(f"./data/users/{person_name}/profile_text_data.json", "w", encoding="utf-8") as f:
         json.dump(json_data, f, indent=4, ensure_ascii=False)
-    print("✅ Saved profile_text_data.json")
+    print("Saved profile_text_data.json")
     return json_data
 
 def scrape_experience(driver, url, name):
@@ -182,24 +182,24 @@ if __name__ == "__main__":
     if auto_login(driver, cookie_path):
         try:
             while True:
-                print("\n🔍 What do you want to scrape?")
-                print("1️⃣  Person Profile")
+                print("\nWhat do you want to scrape?")
+                print("Person Profile")
                 choice = input("Enter your choice (1 to scrape person profile, or type 'quit' to exit): ").strip()
                 if choice.lower() == "quit":
-                    print("👋 Exiting...")
+                    print("Exiting...")
                     break
                 if choice == "1":
-                    profile_url = input("\n🔗 Enter LinkedIn profile URL: ").strip()
+                    profile_url = input("\nEnter LinkedIn profile URL: ").strip()
                     person_name = profile_url.rstrip('/').split("/")[-1]
                     scrape_full_profile(driver, profile_url, person_name)
                 else:
-                    print("❌ Invalid choice. Please enter 1.")
+                    print("Invalid choice. Please enter 1.")
         except KeyboardInterrupt:
-            print("\n🛑 Interrupted by user")
+            print("\nInterrupted by user")
         finally:
             if driver:
                 try:
-                    print("🚪 Closing browser properly...")
+                    print("Closing browser properly...")
                     driver.quit()
                 except Exception as e:
-                    print(f"⚠️ Error closing browser: {e}")
+                    print(f"Error closing browser: {e}")
