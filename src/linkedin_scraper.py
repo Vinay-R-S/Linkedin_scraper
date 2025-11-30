@@ -18,10 +18,26 @@ PASSWORD = os.getenv("LINKEDIN_PASSWORD")
 chrome_options = uc.ChromeOptions()
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+chrome_options.add_argument("--disable-dev-shm-usage")
 
-driver = uc.Chrome(options=chrome_options, headless=False, use_subprocess=True)
+try:
+    driver = uc.Chrome(options=chrome_options, headless=False)
+    print("Chrome driver initialized successfully!")
+except Exception as e:
+    print(f"Failed to initialize driver: {e}")
+    exit(1)
+
+main_class_code = "utrLhBqOdLacwtLYWCbvaTqJwYxMYcARs"
+section_class_code = "artdeco-card pv-profile-card break-words mt2"
+contact_class_code = "artdeco-modal artdeco-modal--layer-default"
+contact_div_class_code = "artdeco-modal__content ember-view"
+
+experience_section_class_code = "artdeco-card pb3"
+education_section_class_code = "artdeco-card pb3"
+activity_section_class_code = "artdeco-card pb3"
+certification_section_class_code = "artdeco-card pb3"
+profile_section_class_code = "artdeco-card pv-profile-card break-words mt2"
+
 
 def clean_text(text):
     text = re.sub(r'\n+', '\n', text)
@@ -58,38 +74,20 @@ def scroll_logic(web_driver, max_posts=20, activity=False):
             break
         last_height = new_height
 
-def save_cookies(driver, path):
-    with open(path, "wb") as file:
-        pickle.dump(driver.get_cookies(), file)
-    print("Cookies saved!")
-
-def load_cookies(driver, path, url="https://www.linkedin.com/"):
-    driver.get(url)
-    with open(path, "rb") as file:
-        cookies = pickle.load(file)
-    for cookie in cookies:
-        driver.add_cookie(cookie)
-    print("Cookies loaded!")
-
-def auto_login(driver, cookie_path):
-    if os.path.exists(cookie_path):
-        try:
-            load_cookies(driver, cookie_path)
-            driver.get("https://www.linkedin.com/feed/")
-            time.sleep(5)
-            if "feed" in driver.current_url:
-                print("Logged in using cookies")
-                return True
-        except Exception as e:
-            print("Failed cookie login:", e)
-    # Fallback to manual login
+def auto_login(driver):
+    driver.get("https://www.linkedin.com/feed/")
+    time.sleep(5)
+    if "feed" in driver.current_url:
+        print("Already logged in.")
+        return True
+    
     print("Manual login required. Opening LinkedIn...")
     driver.get("https://www.linkedin.com/login")
     time.sleep(3)
     input("Please complete login manually, then press ENTER here...")
+    
     if "feed" in driver.current_url:
-        print("Logged in manually. Saving cookies...")
-        save_cookies(driver, cookie_path)
+        print("Logged in manually.")
         return True
     else:
         print("Login failed even after manual attempt.")
@@ -121,8 +119,8 @@ def scrape_profile_page(web_driver, profile_url, person_name):
     scroll_logic(web_driver)
     time.sleep(5)
     soup = BeautifulSoup(web_driver.page_source, "lxml")
-    profile_main = soup.find("main", {"class": "LEVJqSqskwiZsOKHyINitLqYIIhzRCtCGo"})
-    profile_sections = profile_main.find_all("section", {"class": "artdeco-card pv-profile-card break-words mt2"}) if profile_main else []
+    profile_main = soup.find("main", {"class": main_class_code})
+    profile_sections = profile_main.find_all("section", {"class": profile_section_class_code}) if profile_main else []
     text_data = [remove_duplicates(clean_text(sec.get_text())) for sec in profile_sections]
     json_data = [{"id": i, "profile_text_data": text} for i, text in enumerate(text_data)]
     with open(f"./data/users/{person_name}/profile_text_data.json", "w", encoding="utf-8") as f:
@@ -131,25 +129,25 @@ def scrape_profile_page(web_driver, profile_url, person_name):
     return json_data
 
 def scrape_experience(driver, url, name):
-    return generic_scraper(driver, url + "details/experience/", "LEVJqSqskwiZsOKHyINitLqYIIhzRCtCGo",
-                           "dUxZPjlvTvHXbKIKqxcyXwgDQreQuaphAnRE HbXwVwRKWcHTTrFaXCVZvhjRrtITrziCCEM FlJktuVjZNbvBqNzhHjWTxEkvTBdWspSE", "experience_text_data", f"./data/users/{name}/experience_text_data.json")
+    return generic_scraper(driver, url + "details/experience/", main_class_code,
+                           experience_section_class_code, "experience_text_data", f"./data/users/{name}/experience_text_data.json")
 
 def scrape_education(driver, url, name):
-    return generic_scraper(driver, url + "details/education/", "LEVJqSqskwiZsOKHyINitLqYIIhzRCtCGo",
-                           "dUxZPjlvTvHXbKIKqxcyXwgDQreQuaphAnRE HbXwVwRKWcHTTrFaXCVZvhjRrtITrziCCEM FlJktuVjZNbvBqNzhHjWTxEkvTBdWspSE", "education_text_data", f"./data/users/{name}/education_text_data.json")
+    return generic_scraper(driver, url + "details/education/", main_class_code,
+                           education_section_class_code, "education_text_data", f"./data/users/{name}/education_text_data.json")
 
 def scrape_certifications(driver, url, name):
-    return generic_scraper(driver, url + "details/certifications/", "LEVJqSqskwiZsOKHyINitLqYIIhzRCtCGo",
-                           "dUxZPjlvTvHXbKIKqxcyXwgDQreQuaphAnRE HbXwVwRKWcHTTrFaXCVZvhjRrtITrziCCEM FlJktuVjZNbvBqNzhHjWTxEkvTBdWspSE", "certifications_text_data", f"./data/users/{name}/certifications_text_data.json")
+    return generic_scraper(driver, url + "details/certifications/", main_class_code,
+                           certification_section_class_code, "certifications_text_data", f"./data/users/{name}/certifications_text_data.json")
 
 def scrape_recent_activity(driver, url, name):
-    return generic_scraper(driver, url + "recent-activity/all/", "LEVJqSqskwiZsOKHyINitLqYIIhzRCtCGo",
-                           "fie-impression-container",
+    return generic_scraper(driver, url + "recent-activity/all/", main_class_code,
+                           activity_section_class_code,
                            "activities_text_data", f"./data/users/{name}/activities_text_data.json", limit=15)
 
 def scrape_contact_info(driver, url, name):
-    return generic_scraper(driver, url + "overlay/contact-info/", "artdeco-modal artdeco-modal--layer-default",
-                           "artdeco-modal__content ember-view", 
+    return generic_scraper(driver, url + "overlay/contact-info/", contact_class_code,
+                           contact_div_class_code, 
                            "contact_data", f"./data/users/{name}/contact.json")
 
 def combine_all_data(person_name, *all_data_lists):
@@ -177,9 +175,7 @@ def scrape_full_profile(driver, profile_url, person_name="LinkedIn-profile"):
     combine_all_data(person_name, profile_data, experience_data, education_data, cert_data, activity_data, contact_data)
 
 if __name__ == "__main__":
-    cookie_path = "./cookies/linkedin_cookies.pkl"
-    os.makedirs("./cookies", exist_ok=True)
-    if auto_login(driver, cookie_path):
+    if auto_login(driver):
         try:
             while True:
                 print("\nWhat do you want to scrape?")

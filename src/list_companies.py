@@ -1,7 +1,7 @@
 import os
 import json
 
-base_path = r"E:/SalesBuddy/Linkedin_scraper/data/companies"
+base_path = r"C:/Users/vinay/OneDrive/Desktop/IS/Zodopt/Linkedin_scraper/data/companies"
 companies = []
 
 for company in os.listdir(base_path):

@@ -15,10 +15,20 @@ PASSWORD = os.getenv("LINKEDIN_PASSWORD")
 chrome_options = uc.ChromeOptions()
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+chrome_options.add_argument("--disable-dev-shm-usage")
 
-driver = uc.Chrome(options=chrome_options, headless=False, use_subprocess=True)
+try:
+    driver = uc.Chrome(options=chrome_options, headless=False)
+    print("Chrome driver initialized successfully!")
+except Exception as e:
+    print(f"Failed to initialize driver: {e}")
+    exit(1)
+
+main_div_class_code = "utrLhBqOdLacwtLYWCbvaTqJwYxMYcARs"
+section_div_class_code_about = "artdeco-card org-page-details-module__card-spacing artdeco-card org-about-module__margin-bottom"
+div_class_code_people = "org-people__insights-container"
+div_class_code_products = "org-grid__content-height-enforcer"
+
 
 def clean_text(text):
     text = re.sub(r'\n+', '\n', text)
@@ -55,38 +65,20 @@ def scroll_logic(web_driver, max_posts=20, activity=False):
             break
         last_height = new_height
 
-def save_cookies(driver, path):
-    with open(path, "wb") as file:
-        pickle.dump(driver.get_cookies(), file)
-    print("Cookies saved!")
-
-def load_cookies(driver, path, url="https://www.linkedin.com/"):
-    driver.get(url)
-    with open(path, "rb") as file:
-        cookies = pickle.load(file)
-    for cookie in cookies:
-        driver.add_cookie(cookie)
-    print("Cookies loaded!")
-
-def auto_login(driver, cookie_path):
-    if os.path.exists(cookie_path):
-        try:
-            load_cookies(driver, cookie_path)
-            driver.get("https://www.linkedin.com/feed/")
-            time.sleep(5)
-            if "feed" in driver.current_url:
-                print("Logged in using cookies")
-                return True
-        except Exception as e:
-            print("Failed cookie login:", e)
-    # Fallback to manual login
+def auto_login(driver):
+    driver.get("https://www.linkedin.com/feed/")
+    time.sleep(5)
+    if "feed" in driver.current_url:
+        print("Already logged in.")
+        return True
+    
     print("Manual login required. Opening LinkedIn...")
     driver.get("https://www.linkedin.com/login")
     time.sleep(3)
     input("Please complete login manually, then press ENTER here...")
+    
     if "feed" in driver.current_url:
-        print("Logged in manually. Saving cookies...")
-        save_cookies(driver, cookie_path)
+        print("Logged in manually.")
         return True
     else:
         print("Login failed even after manual attempt.")
@@ -140,16 +132,16 @@ def robust_generic_scraper(web_driver, url, main_div_class, content_div_class, o
     return json_data
 
 def scraper_company_about_page(driver, company_profile_url, company_name):
-    return robust_generic_scraper(driver, company_profile_url + "about/", "BpcWsvlgzCvyolHEupMJNolAHuSzXMMbbiI", 
-                                  "org-grid__content-height-enforcer", "company_about_data", f"./data/companies/{company_name}/about.json")
+    return robust_generic_scraper(driver, company_profile_url + "about/", main_div_class_code, 
+                                  section_div_class_code_about, "company_about_data", f"./data/companies/{company_name}/about.json")
 
 def scraper_company_employees_page(driver, company_profile_url, company_name):
-    return robust_generic_scraper(driver, company_profile_url + "people/", "BpcWsvlgzCvyolHEupMJNolAHuSzXMMbbiI",
-                                  "org-grid__content-height-enforcer", "company_employees_data", f"./data/companies/{company_name}/people.json")
+    return robust_generic_scraper(driver, company_profile_url + "people/", main_div_class_code,
+                                  div_class_code_people, "company_employees_data", f"./data/companies/{company_name}/people.json")
 
 def scraper_company_products_page(driver, company_profile_url, company_name):
-    return robust_generic_scraper(driver, company_profile_url + "products/", "BpcWsvlgzCvyolHEupMJNolAHuSzXMMbbiI",
-                                  "org-grid__content-height-enforcer", "company_products_data", f"./data/companies/{company_name}/products.json")
+    return robust_generic_scraper(driver, company_profile_url + "products/", main_div_class_code,
+                                  div_class_code_products, "company_products_data", f"./data/companies/{company_name}/products.json")
 
 def robust_company_post_page(driver, company_profile_url, company_name):
     """
@@ -210,12 +202,8 @@ def scrape_full_company_profile(driver, company_url, company_name="LinkedIn-Comp
     product_data = scraper_company_products_page(driver, company_url, company_name)
     combine_all_data(company_name, about_data, post_data, employee_data, product_data)
 
-# You can add the rest of the scraping logic (posts, combine_all_data, etc.) as in the original file, or import them if needed.
-
 if __name__ == "__main__":
-    cookie_path = "./cookies/linkedin_cookies.pkl"
-    os.makedirs("./cookies", exist_ok=True)
-    if auto_login(driver, cookie_path):
+    if auto_login(driver):
         try:
             while True:
                 print("\nWhat do you want to scrape?")
@@ -238,4 +226,4 @@ if __name__ == "__main__":
                     print("Closing browser properly...")
                     driver.quit()
                 except Exception as e:
-                    print(f"Error closing browser: {e}") 
+                    print(f"Error closing browser: {e}")
