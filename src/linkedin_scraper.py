@@ -164,7 +164,7 @@ def combine_all_data(person_name, *all_data_lists):
                 combined_data[key].append(value)
     with open(f"./data/users/{person_name}/final_profile.json", "w", encoding="utf-8") as f:
         json.dump(combined_data, f, indent=4, ensure_ascii=False)
-    print("🎉 All data combined")
+    print("All data combined")
 
 def scrape_full_profile(driver, profile_url, person_name="LinkedIn-profile"):
     os.makedirs(f"./data/users/{person_name}", exist_ok=True)

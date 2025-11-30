@@ -101,7 +101,7 @@ def generate_leads():
 def save_to_json(data, filename="leads_1.json"):
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
-    print(f"✅ Leads saved to {filename}")
+    print(f"Leads saved to {filename}")
 
 # Run the script
 if __name__ == "__main__":

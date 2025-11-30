@@ -200,7 +200,7 @@ def combine_all_data(person_name, *all_data_lists):
     os.makedirs(f"./data/companies/{person_name}", exist_ok=True)
     with open(f"./data/companies/{person_name}/final_profile.json", "w", encoding="utf-8") as f:
         json.dump(combined_data, f, indent=4, ensure_ascii=False)
-    print("🎉 All data combined")
+    print("All data combined")
 
 def scrape_full_company_profile(driver, company_url, company_name="LinkedIn-Company-profile"):
     os.makedirs(f"./data/companies/{company_name}", exist_ok=True)
