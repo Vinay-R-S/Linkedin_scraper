@@ -113,6 +113,3 @@ This project is for **educational purposes** only. Scraping LinkedIn **violates 
 * Works best with real accounts (dummy accounts may get flagged)
 
 ---
-
-
-https://www.linkedin.com/in/taufeeq/

@@ -210,7 +210,7 @@ if __name__ == "__main__":
                 print("Company Profile (All: About, Posts, People, Products)")
                 choice = input("Enter your choice (1 or 'quit' to exit): ").strip()
                 if choice.lower() == "quit":
-                    print("👋 Exiting...")
+                    print("Exiting...")
                     break
                 profile_url = input("\nEnter LinkedIn company profile URL: ").strip()
                 company_name = profile_url.rstrip('/').split("/")[-1]
