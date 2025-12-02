@@ -1,0 +1,314 @@
+{
+  "name": "NCompanyProfiling",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        -64
+      ],
+      "id": "1afa0e64-e243-4480-951b-0b528b0d0a77",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an intelligent assistant.\n\nRead the following JSON object extracted from a LinkedIn company profile, and generate a very concise summary for company profiling.\n\nIt should only include:\n- company_name\n- industry\n- company_size\n- specialties (list of core focus areas)\n- key_markets (few major countries or regions where they operate)\n- linkedin_summary (one sentence summary of their typical activity or positioning)\n\nReturn the output in this JSON format only:\n{\n  \"company_name\": \"\",\n  \"industry\": \"\",\n  \"company_size\": \"\",\n  \"specialties\": [],\n  \"key_markets\": [],\n  \"linkedin_summary\": \"\"\n}\n\nHere’s the data:\n{{ JSON.stringify($json) }}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        960,
+        -48
+      ],
+      "id": "2dec74ba-e0d8-4c83-83d8-1afffa5b51a4",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-001",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        960,
+        192
+      ],
+      "id": "41de0f70-b7a6-4eea-a9c3-17dd19281a2b",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "TuNY5wbvzIX7BzMu",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        768,
+        -48
+      ],
+      "id": "d4c62e40-b59a-4568-b058-9d0774571436",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "collection": "Companies",
+        "fields": "=output, {{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.2,
+      "position": [
+        1328,
+        -48
+      ],
+      "id": "3e01ca68-6622-48ec-a7d6-246487a68aa4",
+      "name": "MongoDB",
+      "credentials": {
+        "mongoDb": {
+          "id": "nBjhL5XKrOgGcBko",
+          "name": "n8n_DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"company_name\": { \"type\": \"string\" },\n    \"industry\": { \"type\": \"string\" },\n    \"company_size\": { \"type\": \"string\" },\n    \"specialties\": {\n      \"type\": \"array\",\n      \"items\": { \"type\": \"string\" }\n    },\n    \"key_markets\": {\n      \"type\": \"array\",\n      \"items\": { \"type\": \"string\" }\n    },\n    \"linkedin_summary\": { \"type\": \"string\" },\n    \"website_link\": { \"type\": \"string\" }\n  },\n  \"required\": [\n    \"company_name\",\n    \"industry\",\n    \"company_size\",\n    \"specialties\",\n    \"key_markets\",\n    \"linkedin_summary\",\n    \"website_link\"\n  ]\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1088,
+        192
+      ],
+      "id": "866d1299-f454-41de-9f1d-2706d928e880",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-001",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        352
+      ],
+      "id": "5009dee8-9383-4699-94db-04e4e1e013b8",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "TuNY5wbvzIX7BzMu",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": "=1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        288,
+        -64
+      ],
+      "id": "a6f9c661-df31-4302-b7cc-2a323af83cc7",
+      "name": "Loop Over Items",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const stdout = $input.first().json.stdout;\nconst companies = JSON.parse(stdout);\nconst arr = companies.map(company => ({ json: company }));\nreturn arr"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        -64
+      ],
+      "id": "3bc4377c-ebc9-4344-a8d5-b82abb6884e0",
+      "name": "Companies folder extraction"
+    },
+    {
+      "parameters": {
+        "command": "python C:/Users/vinay/OneDrive/Desktop/IS/Zodopt/Linkedin_scraper/src/list_companies.py\n"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        -64
+      ],
+      "id": "0dca81fe-ff97-4ec3-aee6-c998570e42ab",
+      "name": "Execute Command"
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ $json.path }}/about.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        528,
+        -48
+      ],
+      "id": "9fe4a960-84ae-4275-a513-4156e5dada74",
+      "name": "Read final_profile.json"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Execute Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "MongoDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Read final_profile.json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Companies folder extraction": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command": {
+      "main": [
+        [
+          {
+            "node": "Companies folder extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read final_profile.json": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d9161aca-1257-4007-9cff-ae7c947be2ee",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "baf311faa145256f9a0c8d9000ecd96dc41f95419e7eed6539446e3b393659ec"
+  },
+  "id": "PZ3S83KH8taslvMX",
+  "tags": []
+}
